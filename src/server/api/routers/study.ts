@@ -17,6 +17,9 @@ export const studyRouter = createTRPCRouter({
       console.log("--- Processing Raw Text ---");
       console.log("Title:", input.title ?? "Untitled Note");
       console.log("Content Preview:", input.text.substring(0, 200) + "...");
+
+      // if the content does not seem to be a lecture note or study material, return an error
+      invoke_agent(input.text);
       
       // In the future, this is where LangChain & Chroma logic goes
       return { success: true, message: "Text received and logged" };
@@ -53,6 +56,7 @@ export const studyRouter = createTRPCRouter({
         console.log("Extracted Text Length:", extractedText.length);
         console.log("Extracted Content Preview:", extractedText.substring(0, 500) + "...");
 
+        // if the content does not seem to be a lecture note or study material, return an error
         invoke_agent(extractedText);
 
         return { 
