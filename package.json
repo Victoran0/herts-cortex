@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.2",
+    "@huggingface/inference": "^4.13.11",
     "@langchain/community": "^1.1.9",
     "@langchain/core": "^1.1.17",
     "@langchain/groq": "^1.0.3",
