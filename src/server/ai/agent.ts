@@ -6,6 +6,8 @@ const State = new StateSchema({
   messages: MessagesValue,
 });
 
+// if the content does not seem to be a lecture note or study material, return an error
+
 const mockNode: GraphNode<typeof State> = async (state) => {
     console.log('The current state:\n', state.messages)
     const document = state.messages[state.messages.length - 1]?.content
