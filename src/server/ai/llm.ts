@@ -6,3 +6,8 @@ export const llm = new ChatGroq({
     maxTokens: undefined,
     maxRetries: 2,
 })
+
+export const validator_model = new ChatGroq({
+  model: "meta-llama/llama-4-scout-17b-16e-instruct",
+  temperature: 0.6,
+});
