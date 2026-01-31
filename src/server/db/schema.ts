@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import { index, primaryKey, sqliteTableCreator } from "drizzle-orm/sqlite-core";
 import { type AdapterAccount } from "next-auth/adapters";
 
+
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
  * database instance for multiple projects.
@@ -102,4 +103,27 @@ export const verificationTokens = createTable(
     expires: d.integer({ mode: "timestamp" }).notNull(),
   }),
   (t) => [primaryKey({ columns: [t.identifier, t.token] })],
+);
+
+export const documents = createTable(
+  "documents",
+  (d) => ({
+    chatId: d
+    .text("chat_id", { length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+    title: d.text("title", { length: 255 }).notNull(),
+    docContent: d.text("doc_content").notNull(),
+    userId: d.text({ length: 255 }).notNull(),
+    createdAt: d
+      .integer({ mode: "timestamp" })
+      .default(sql`(unixepoch())`)
+      .notNull(),
+    updatedAt: d.integer({ mode: "timestamp" }).$onUpdate(() => new Date()),
+  }),
+  (t) => [
+    index("chat_id_idx").on(t.chatId),
+    index("title_idx").on(t.title),
+  ],
 );
