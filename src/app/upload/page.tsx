@@ -35,8 +35,7 @@ export default function UploadPage() {
   const router = useRouter()
 
   // tRPC Mutations
-  const textMutation = api.study.processText.useMutation();
-  const fileMutation = api.study.processFile.useMutation();
+  const initializeMutation = api.study.initializeStudySession.useMutation();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -63,42 +62,54 @@ export default function UploadPage() {
   };
 
   const handleUpload = async () => {
+    // 1. Validation: Ensure there is actually something to upload
+    if (!pastedText && files.length === 0) {
+      toast.error("No content found", {
+        description: "Please paste some text or upload at least one file.",
+      });
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
-      // Handle Pasted Text
-      if (pastedText) {
-        await textMutation.mutateAsync({ 
-          text: pastedText, 
-          title: "Pasted Note " + new Date().toLocaleDateString() 
-        });
-      }
-
-      // Handle Files
-      for (const file of files) {
-        const base64 = await fileToBase64(file);
-        await fileMutation.mutateAsync({
-          base64,
+      // 2. Prepare all files by converting them to Base64 in parallel
+      // This is much faster than a 'for' loop
+      const fileData = await Promise.all(
+        files.map(async (file) => ({
+          base64: await fileToBase64(file),
           fileName: file.name,
           fileType: file.type,
-        });
-      }
+        }))
+      );
 
-      toast.success("Cortex Initialized", {
-        description: "All materials have been processed successfully.",
+      // 3. Call the UNIFIED mutation
+      // We send the title, the pasted text, and the array of files in one go
+      const result = await initializeMutation.mutateAsync({
+        pastedText: pastedText || undefined,
+        files: fileData.length > 0 ? fileData : undefined,
       });
-      
-      // Reset state
-      setFiles([]);
-      setPastedText("");
 
-    } catch (error) {
-      toast.error("Error", {
-        description: "Something went wrong during processing."
+      // 4. Handle Success
+      if (result.success && result.studyId) {
+        toast.success("Cortex Initialized", {
+          description: "All materials have been processed successfully.",
+        });
+
+        // Reset local state
+        setFiles([]);
+        setPastedText("");
+
+        // 5. Redirect to the Study Hub using the new ID
+        router.push(`/study/${result.studyId}`);
+      }
+    } catch (error: any) {
+      // 6. Handle Errors (including the AI validation error we set up)
+      toast.error("Processing Error", {
+        description: error.message || "Something went wrong. Please try again.",
       });
     } finally {
       setIsProcessing(false);
-      router.push(`/study/${'111'}`)
     }
   };
 
@@ -182,7 +193,7 @@ export default function UploadPage() {
                         <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                       </div>
                     </div>
-                    <button onClick={() => removeFile(index)} className="p-1 hover:bg-white/10 rounded-full transition-colors">
+                    <button title="Remove file" onClick={() => removeFile(index)} className="p-1 hover:bg-white/10 rounded-full transition-colors">
                       <X size={18} className="text-gray-400" />
                     </button>
                   </motion.div>
