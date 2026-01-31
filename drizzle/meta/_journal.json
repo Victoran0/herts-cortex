@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1769814305966,
+      "tag": "0000_overrated_gabe_jones",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1769815771604,
+      "tag": "0001_fresh_meteorite",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1769816986469,
+      "tag": "0002_supreme_nextwave",
+      "breakpoints": true
+    }
+  ]
+}
