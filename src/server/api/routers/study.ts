@@ -3,10 +3,8 @@ import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import pdf from "pdf-parse"; 
 import mammoth from "mammoth";
 import { parseOfficeAsync } from 'officeparser';
-import { documents } from "@/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { generateTitleWithAI, validateContentWithAI } from "@/server/ai/validator";
-import { eq } from "drizzle-orm";
 import { invoke_agent } from "@/server/ai/agent";
 
 
@@ -80,11 +78,13 @@ export const studyRouter = createTRPCRouter({
         : await generateTitleWithAI(combinedContent);
 
       // 3. Save to Drizzle
-      const [newDoc] = await ctx.db.insert(documents).values({
-        title: finalTitle,
-        docContent: combinedContent,
-        userId: ctx.session?.user?.id ?? "guest_user",
-      }).returning();
+      const newDoc = await ctx.prisma.document.create({
+        data: {
+          title: finalTitle,
+          docContent: combinedContent,
+          userId: "guest_user",
+        },
+      });
 
       return { 
         success: true, 
@@ -96,8 +96,8 @@ export const studyRouter = createTRPCRouter({
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const doc = await ctx.db.query.documents.findFirst({
-        where: eq(documents.chatId, input.id),
+      const doc = await ctx.prisma.document.findUnique({
+        where: { chatId: input.id },
       });
 
       if (!doc) {
@@ -123,4 +123,4 @@ export const studyRouter = createTRPCRouter({
 
 });
 
-// 3cd75d13-3e01-441f-8d5c-68dd83673f88
+// f4fcb249-3d89-41d6-8755-807369a76f1f

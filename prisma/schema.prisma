@@ -1,0 +1,27 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Document {
+  chatId     String    @id @default(uuid()) @map("chat_id") @db.Uuid
+  title      String    @map("title") @db.VarChar(255)
+  docContent String    @map("doc_content") @db.Text
+  userId     String    @db.VarChar(255)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@index([chatId])
+  @@index([title])
+  @@map("herts-cortex_document")
+}
