@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { 
   Brain, 
   Zap, 
@@ -14,8 +14,7 @@ import {
   MessageSquare,
   Sparkles,
   History,
-  Highlighter, 
-  Loader2
+  Highlighter
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation"; 
@@ -30,18 +29,18 @@ import { Footer } from "@/app/_components/Footer";
 import { StudyModule } from "./StudyModule";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { ChatInterface } from "@/components/ChatInterface";
 
 
 
 export default function StudyHub() {
   // Mock state for progress - in reality, this would come from Drizzle/tRPC
   const [hasTakenAssessment, setHasTakenAssessment] = useState(true); 
-  const [progress, setProgress] = useState(65);
+  const [progress, setProgress] = useState(0);
   const params = useParams();
   const studyId = params.id as string;
 
-  // Fetch the document data from Drizzle via tRPC
+  // Fetch the document data from the db via tRPC
   const { data: studySession, isLoading, error } = api.study.getById.useQuery(
     { id: studyId },
     { enabled: !!studyId } // Only run if ID exists
@@ -49,7 +48,12 @@ export default function StudyHub() {
 
   // State for the AI Interaction
   const [isOpen, setIsOpen] = useState(false);
-  const [activePersona, setActivePersona] = useState<any>(null);
+  const [activePersona, setActivePersona] = useState<{
+    key: string;
+    title: string;
+    icon: any;
+  } | null>(null);
+
   const [aiResponse, setAiResponse] = useState("");
 
   if (error) return <div className="text-white p-10 text-center">Session not found.</div>;
@@ -60,15 +64,8 @@ export default function StudyHub() {
 
   const handlePersonaClick = (personaKey: string, title: string, icon: any) => {
     if (!studySession) return;
-    
-    setActivePersona({ title, icon });
-    setAiResponse(""); // Clear previous response
+    setActivePersona({ key: personaKey, title, icon });
     setIsOpen(true);
-    
-    personaMutation.mutate({
-      docContent: studySession.docContent,
-      persona: personaKey as any
-    });
   };
 
   return (
@@ -248,23 +245,20 @@ export default function StudyHub() {
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent 
           side="right" 
-          // w-full: mobile
-          // sm:max-w-[90%]: tablets
-          // lg:max-w-[60vw]: desktops (60% of page)
-          className="w-full sm:max-w-[90%] lg:max-w-[60vw] bg-[#0a0a0a]/95 backdrop-blur-2xl border-l border-white/10 text-white p-0 shadow-2xl shadow-red-600/5 h-full flex flex-col overflow-hidden pb-5"
+          className="w-full sm:max-w-[90%] lg:max-w-[60vw] bg-[#0a0a0a]/95 backdrop-blur-2xl border-l border-white/10 text-white p-0 shadow-2xl shadow-red-600/5 h-full flex flex-col overflow-hidden"
         >
           <div className="absolute inset-y-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-red-600/50 to-transparent z-50" />
 
           <div className="flex flex-col h-full">
-            {/* Header Area - Fixed at top */}
-            <SheetHeader className="flex-none p-8 border-b border-white/5 bg-black/20">
+            {/* Header Area */}
+            <SheetHeader className="flex-none p-6 border-b border-white/5 bg-black/20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-red-600/10 flex items-center justify-center border border-red-600/20">
                     {activePersona?.icon && <activePersona.icon className="text-red-500" size={28} />}
                   </div>
                   <div>
-                    <SheetTitle className="text-white text-3xl font-bold tracking-tight">
+                    <SheetTitle className="text-white text-2xl font-bold tracking-tight">
                       {activePersona?.title}
                     </SheetTitle>
                     <SheetDescription className="text-gray-500 flex items-center gap-2 mt-1">
@@ -273,40 +267,20 @@ export default function StudyHub() {
                     </SheetDescription>
                   </div>
                 </div>
-                
-                {/* Optional: Add a "Copy" or "Export" button here later */}
               </div>
             </SheetHeader>
 
-            {/* Content Area - Scrollable */}
-            <ScrollArea className="flex-1 h-full w-full">
-              <div className="max-w-4xl mx-auto p-8">
-                {personaMutation.isPending ? (
-                  <div className="space-y-6 py-10">
-                    <Skeleton className="h-10 w-1/2 bg-white/5" />
-                    <div className="space-y-3">
-                      <Skeleton className="h-4 w-full bg-white/5" />
-                      <Skeleton className="h-4 w-[95%] bg-white/5" />
-                      <Skeleton className="h-4 w-[98%] bg-white/5" />
-                    </div>
-                    <Skeleton className="h-40 w-full bg-white/5 rounded-2xl" />
-                    <div className="flex items-center gap-3 text-red-500">
-                      <Loader2 className="animate-spin" size={20} />
-                      <span className="text-sm font-bold uppercase tracking-widest">Cortex is synthesizing knowledge...</span>
-                    </div>
-                  </div>
-                ) : (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }} 
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4 }}
-                    className="pb-20"
-                  >
-                    <MarkdownRenderer content={aiResponse} />
-                  </motion.div>
-                )}
-              </div>
-            </ScrollArea>
+            {/* Chat Interface Area */}
+            <div className="flex-1 flex flex-col min-h-0 relative bg-[#0a0a0a]">
+              {activePersona && studySession && (
+                <ChatInterface 
+                  key={activePersona.key} 
+                  docContent={studySession.docContent}
+                  persona={activePersona.key}
+                  personaTitle={activePersona.title}
+                />
+              )}
+            </div>
           </div>
         </SheetContent>
       </Sheet>
