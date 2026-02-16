@@ -21,6 +21,8 @@
   },
   "dependencies": {
     "@ai-sdk/groq": "^3.0.24",
+    "@ai-sdk/react": "^3.0.88",
+    "@ai-sdk/rsc": "^2.0.86",
     "@auth/drizzle-adapter": "^1.7.2",
     "@huggingface/inference": "^4.13.11",
     "@langchain/community": "^1.1.9",
