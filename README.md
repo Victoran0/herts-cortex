@@ -1,7 +1,3 @@
-Here’s a **clean, professional, GitHub-ready README** you can use 👇
-
----
-
 # 🧠 HertsCortex
 
 **HertsCortex** is an AI-powered study companion built for students at the University of Hertfordshire.
