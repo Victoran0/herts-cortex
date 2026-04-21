@@ -11,6 +11,7 @@ import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ChatInterfaceProps {
+  docTitle: string;
   docContent: string;
   persona: string;
   personaTitle: string;
@@ -20,6 +21,7 @@ export function ChatInterface({
   docContent,
   persona,
   personaTitle,
+  docTitle,
 }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState("");
@@ -56,7 +58,8 @@ export function ChatInterface({
                 {personaTitle}
               </div>
               <div className="text-gray-300 bg-white/5 border border-white/10 rounded-2xl rounded-tl-none p-4">
-                I'm ready! Ask me anything about your notes, and I'll answer in
+                I'm ready! Ask me anything about your {" "} <span className="text-red-400 font-bold">{docTitle}</span> notes.
+              {" "} notes, and I'll answer in
                 <span className="text-red-400 font-bold">
                   {" "}
                   {personaTitle}
