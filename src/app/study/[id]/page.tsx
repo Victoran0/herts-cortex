@@ -275,6 +275,7 @@ export default function StudyHub() {
               {activePersona && studySession && (
                 <ChatInterface 
                   key={activePersona.key} 
+                  docTitle={studySession.title}
                   docContent={studySession.docContent}
                   persona={activePersona.key}
                   personaTitle={activePersona.title}
