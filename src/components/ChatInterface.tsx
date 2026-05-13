@@ -15,6 +15,7 @@ interface ChatInterfaceProps {
   docContent: string;
   persona: string;
   personaTitle: string;
+  studyId: string;
 }
 
 export function ChatInterface({
@@ -22,6 +23,7 @@ export function ChatInterface({
   persona,
   personaTitle,
   docTitle,
+  studyId,
 }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState("");
@@ -33,6 +35,7 @@ export function ChatInterface({
       body: {
         docContent,
         persona,
+        studyId,
       },
     }),
   });
