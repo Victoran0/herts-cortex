@@ -3,7 +3,6 @@ import { llm } from "./llm";
 import { personaPrompt, personaPrompts } from "./prompts";
 import { mcqSchema } from "./validator";
 import { AIMessage } from "node_modules/@langchain/core/dist/messages/ai";
-import { v4 as uuidv4 } from 'uuid';
 
 
 const State = new StateSchema({
@@ -69,29 +68,32 @@ export const graph = new StateGraph(State)
   .addEdge("multiPersonaNode", END)
   .compile({ checkpointer });
 
+
+
 // 6. Invoke the Agent
-export const invoke_agent = async (document: string, persona: string, message: string) => {
-    const thread_id = uuidv4();
-    const config = { configurable: {thread_id: thread_id } };
-  //  Only pass the document when the state is empty, i.e new convo after adding memory
-    const response = await graph.invoke({ 
-        messages:[{ 
-            role: "user", 
-            content: message,
-            additional_kwargs: { persona: persona, document: document }, 
-        }] 
-    }, config
-    );
-    const graphState = await graph.getState(config)
-    console.log('The current state of the graph:\n', graphState);
-    console.log('The AI response:\n', response);
+// export const invoke_agent = async (document: string, persona: string, message: string, studyId: string) => {
+//     const config = { configurable: {thread_id: studyId } };
+//     console.log('******* The thread id: ', studyId);
+//     console.log("The agent configuration:\n", config);
+//   //  Only pass the document when the state is empty, i.e new convo after adding memory
+//     const response = await graph.invoke({
+//         messages:[{ 
+//             role: "user",
+//             content: message,
+//             additional_kwargs: { persona: persona, document: document }, 
+//         }] 
+//     }, config
+//     );
+//     const graphState = await graph.getState(config)
+//     console.log('The current state of the graph:\n', graphState);
+//     console.log('The AI response:\n', response);
     
-    const finalContent = response.messages[response.messages.length - 1]?.content;
+//     const finalContent = response.messages[response.messages.length - 1]?.content;
 
-    // If you routed to the mcqNode, parse the structured string back into a JS object
-    if (persona === "mcq" && typeof finalContent === "string") {
-        return JSON.parse(finalContent); 
-    }
+//     // If you routed to the mcqNode, parse the structured string back into a JS object
+//     if (persona === "mcq" && typeof finalContent === "string") {
+//         return JSON.parse(finalContent); 
+//     }
 
-    return finalContent;
-};
+//     return finalContent;
+// };
