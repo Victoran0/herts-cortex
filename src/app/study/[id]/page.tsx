@@ -54,13 +54,13 @@ export default function StudyHub() {
     icon: any;
   } | null>(null);
 
-  const [aiResponse, setAiResponse] = useState("");
+  // const [aiResponse, setAiResponse] = useState("");
 
   if (error) return <div className="text-white p-10 text-center">Session not found.</div>;
 
-  const personaMutation = api.study.askPersona.useMutation({
-    onSuccess: (data) => setAiResponse(data.response as string),
-  });
+  // const personaMutation = api.study.askPersona.useMutation({
+  //   onSuccess: (data) => setAiResponse(data.response as string),
+  // });
 
   const handlePersonaClick = (personaKey: string, title: string, icon: any) => {
     if (!studySession) return;
@@ -247,7 +247,7 @@ export default function StudyHub() {
           side="right" 
           className="w-full sm:max-w-[90%] lg:max-w-[60vw] bg-[#0a0a0a]/95 backdrop-blur-2xl border-l border-white/10 text-white p-0 shadow-2xl shadow-red-600/5 h-full flex flex-col overflow-hidden"
         >
-          <div className="absolute inset-y-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-red-600/50 to-transparent z-50" />
+          <div className="absolute inset-y-0 left-0 w-px bg-linear-to-b from-transparent via-red-600/50 to-transparent z-50" />
 
           <div className="flex flex-col h-full">
             {/* Header Area */}
@@ -279,6 +279,7 @@ export default function StudyHub() {
                   docContent={studySession.docContent}
                   persona={activePersona.key}
                   personaTitle={activePersona.title}
+                  studyId={studyId}
                 />
               )}
             </div>
