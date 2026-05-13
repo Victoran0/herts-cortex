@@ -7,7 +7,7 @@ import { graph } from "@/server/ai/agent";
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-    const { messages, docContent, persona }: { messages: UIMessage[], docContent: string, persona: string } = await req.json();
+    const { messages, docContent, persona, studyId }: { messages: UIMessage[], docContent: string, persona: string, studyId: string } = await req.json();
 
     const langChainMessages = messages.map((msg, index) => {
         const isLast = index === messages.length - 1;
@@ -17,6 +17,7 @@ export async function POST(req: Request) {
             ...(isLast ? { additional_kwargs: { persona, document: docContent } } : {})
         };
     });
+
 
     return createUIMessageStreamResponse({
         stream: createUIMessageStream({
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
                 try {
                     const eventStream = await graph.streamEvents({
                         messages: langChainMessages
-                    }, { version: "v2" });
+                    }, { version: "v2" , configurable: {thread_id: studyId }} );
 
                     for await (const event of eventStream) {
                         // --- SCENARIO A: Streaming Text ---
@@ -73,6 +74,8 @@ export async function POST(req: Request) {
                         type: 'text-end',
                         id: textStreamId,
                     });
+                    const graphState = await graph.getState({configurable: {thread_id: studyId }} )
+                    console.log('The current state of the graph:\n', graphState);
                 }
             }
         })
