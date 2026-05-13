@@ -110,15 +110,15 @@ export const studyRouter = createTRPCRouter({
       return doc;
     }),
 
-  askPersona: publicProcedure
-    .input(z.object({
-      docContent: z.string(),
-      persona: z.enum(["summary", "breakdown", "sassy", "genz", "toddler", "exam"])
-    }))
-    .mutation(async ({ input }) => {
-      const response = await invoke_agent(input.docContent, input.persona);
-      return { response };
-    }),
+  // askPersona: publicProcedure
+  //   .input(z.object({
+  //     docContent: z.string(),
+  //     persona: z.enum(["summary", "breakdown", "sassy", "genz", "toddler", "mcq", "theory", "exam"])
+  //   }))
+  //   .mutation(async ({ input }) => {
+  //     const response = await invoke_agent(input.docContent, input.persona);
+  //     return { response };
+  //   }),
   
 
 });
