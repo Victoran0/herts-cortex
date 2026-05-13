@@ -1,68 +1,80 @@
 import { groq } from "@ai-sdk/groq";
-import { convertToModelMessages, streamText } from 'ai';
+import { convertToModelMessages, streamText, createUIMessageStreamResponse, createUIMessageStream } from 'ai';
 import type { UIMessage } from 'ai';
-
-// Re-using your existing prompts map
-const personaPrompts = {
-    summary: "You are a master of brevity. Summarize concepts into key bullet points. Focus on 'must-know' info for an exam.",
-    breakdown: "You are a logical professor. Break down complex topics into a structured, easy-to-follow hierarchy.",
-    sassy: "You are a brilliant but sarcastic tutor. Explain core concepts using funny, slightly mean, but highly effective real-life examples.",
-    genz: "You are a Gen Z study influencer. Explain material using brain-rot slang (no cap, skibidi, rizz, etc.) and informal internet humor.",
-    toddler: "You are a kindergarten teacher. Explain complex topics like I am 5 years old. Use simple analogies like toys or food.",
-    exam: "You are a strict examiner. Challenge the student with mock exam questions based on their input.",
-    mcq: "You are a quiz master. Generate rapid-fire multiple choice questions based on the user's query.",
-    theory: "You are an academic grader. Ask the user to write a short response, then grade it critically.",
-    deep_roots: "You are a librarian. Suggest external resources or foundational concepts related to the query."
-};
+import type { UIMessageStreamWriter } from "ai";
+import { graph } from "@/server/ai/agent";
 
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
     const { messages, docContent, persona }: { messages: UIMessage[], docContent: string, persona: string } = await req.json();
 
-    // Get the specific instruction for the selected persona
-    const personaInstruction = personaPrompts[persona as keyof typeof personaPrompts] || personaPrompts.summary;
-
-    // Construct the System Prompt
-    const systemPrompt = `
-        ${personaInstruction}
-
-        CONTEXT / LECTURE NOTES:
-        ${docContent}
-
-        INSTRUCTIONS:
-        - Answer the user's question based strictly on the provided Context.
-        - If the user's question is unrelated to the Context, respond with "Sorry, I can only answer questions related to the provided lecture notes."
-        - Maintain the persona at all times.
-        - Use Markdown for formatting (bold, tables, code blocks).
-    `;
-
-    const result = streamText({
-        model: groq("llama-3.3-70b-versatile"),
-        system: systemPrompt,
-        messages: await convertToModelMessages(messages),
+    const langChainMessages = messages.map((msg, index) => {
+        const isLast = index === messages.length - 1;
+        return {
+            role: msg.role === 'user' ? 'user' : 'assistant',
+            content: msg.parts.filter((p) => p.type === 'text').map((p) => p.text).join(''),
+            ...(isLast ? { additional_kwargs: { persona, document: docContent } } : {})
+        };
     });
 
-    return result.toUIMessageStreamResponse();
+    return createUIMessageStreamResponse({
+        stream: createUIMessageStream({
+            // 2. Explicitly type the destructured argument and the return type
+            execute: async ({ writer }: { writer: UIMessageStreamWriter }): Promise<void> => {
+                const textStreamId = 'agent-response';
+
+                writer.write({
+                    type: 'text-start',
+                    id: textStreamId,
+                });
+
+                try {
+                    const eventStream = await graph.streamEvents({
+                        messages: langChainMessages
+                    }, { version: "v2" });
+
+                    for await (const event of eventStream) {
+                        // --- SCENARIO A: Streaming Text ---
+                        if (event.event === "on_chat_model_stream") {
+                            const chunk = event.data.chunk;
+                            
+                            // 3. Strictly check typeof to satisfy TypeScript that delta is a string
+                            if (chunk?.content && typeof chunk.content === "string") {
+                                writer.write({
+                                    type: 'text-delta',
+                                    id: textStreamId,
+                                    delta: chunk.content,
+                                });
+                            }
+                        }
+
+                        // --- SCENARIO B: Structured Output ---
+                        if (event.event === "on_chain_end" && event.name === "mcqNode") {
+                            const stateUpdate = event.data.output;
+                            
+                            // 4. Explicitly cast to string. LangChain types this loosely, 
+                            // which makes the AI SDK writer complain.
+                            const finalContent = stateUpdate?.messages?.[0]?.content as string;
+                            
+                            if (finalContent && typeof finalContent === "string") {
+                                writer.write({
+                                    type: 'text-delta',
+                                    id: textStreamId,
+                                    delta: finalContent,
+                                });
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error("Agent Streaming Error:", error);
+                } finally {
+                    writer.write({
+                        type: 'text-end',
+                        id: textStreamId,
+                    });
+                }
+            }
+        })
+    });
 }
-
-
-
-// import { convertToModelMessages, streamText } from 'ai';
-// import type { UIMessage } from 'ai';
-// import { groq } from '@ai-sdk/groq';
-
-// // Allow streaming responses up to 30 seconds
-// export const maxDuration = 30;
-
-// export async function POST(req: Request) {
-//   const { messages }: { messages: UIMessage[] } = await req.json();
-
-//   const result = streamText({
-//     model: groq('openai/gpt-oss-120b'),
-//     system: 'You are a helpful assistant.',
-//     messages: await convertToModelMessages(messages),
-//   });
-
-//   return result.toUIMessageStreamResponse();
-// }
